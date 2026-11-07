@@ -1,0 +1,9 @@
+Nov  7 10:15:32 host sshd[1234]: Failed password for invalid user admin from 203.0.113.5 port 52341 ssh2
+Nov  7 10:15:35 host sshd[1235]: Failed password for root from 203.0.113.5 port 52342 ssh2
+Nov  7 10:15:40 host sshd[1236]: Failed publickey for deploy from 198.51.100.44 port 60123 ssh2: RSA SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Nov  7 10:16:02 host sshd[1237]: Accepted publickey for deploy from 198.51.100.44 port 60123 ssh2: RSA SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Nov  7 10:16:20 host sshd[1238]: Invalid user test from 203.0.113.9 port 40001
+Nov  7 10:17:11 host sshd[1239]: Connection closed by authenticating user root 203.0.113.5 port 52350 [preauth]
+Nov  7 10:18:00 host sshd[1240]: Accepted password for alice from 203.0.113.12 port 34567 ssh2
+Nov  7 10:18:30 host sshd[1241]: Disconnected from authenticating user bob 203.0.113.9 port 40002 [preauth]
+Nov  7 10:19:00 host sshd[1242]: Connection closed by 198.51.100.44 port 60124 [preauth]

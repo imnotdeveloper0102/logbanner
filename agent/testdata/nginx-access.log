@@ -1,0 +1,6 @@
+203.0.113.7 - - [07/Nov/2026:10:15:32 +0700] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+203.0.113.7 - alice [07/Nov/2026:10:16:01 +0700] "POST /login HTTP/1.1" 302 0 "http://example.local/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+203.0.113.9 - - [07/Nov/2026:10:16:40 +0700] "GET /.env HTTP/1.1" 404 178 "-" "curl/8.5.0"
+198.51.100.23 - - [07/Nov/2026:10:17:05 +0700] "GET /wp-admin/ HTTP/1.1" 404 178 "-" "Mozilla/5.0 (compatible; scanner)"
+203.0.113.7 - - [07/Nov/2026:10:17:22 +0700] "GET /static/app.css HTTP/1.1" 200 4521 "http://example.local/index.html" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+2001:db8::1 - - [07/Nov/2026:10:18:00 +0700] "GET /ipv6-check HTTP/1.1" 200 12 "-" "curl/8.5.0"

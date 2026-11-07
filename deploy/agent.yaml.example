@@ -1,0 +1,57 @@
+# Agent config example. Copy to /etc/logbanner/agent.yaml on a real host,
+# or mount it into the agent container. Dry-run stays on until the
+# firewall driver is verified on the target host; with dry_run: true
+# the agent records bans in the database (marked dry_run) and logs
+# "would ban", but never touches the firewall.
+dry_run: true
+# Firewall driver: nftables (default) or iptables (ipset + iptables
+# rules). In live mode the agent fails at startup if the driver's
+# binaries are missing or its table/sets cannot be created.
+firewall_driver: nftables
+# Hard whitelist, checked before every ban, no exceptions. Loopback
+# (127.0.0.0/8 and ::1) is always whitelisted and needs no entry.
+# Defaults to the RFC1918 private ranges when unset; set an empty
+# list to whitelist nothing extra. Add the admin's own IPs here so a
+# detection for them is skipped with a warning instead of a ban.
+whitelist:
+  - 10.0.0.0/8
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+# Max active bans (stage 8). When this many bans are in force, new
+# automatic bans are refused with a log line and a ban_refused
+# event; detections are still recorded. A manual ban by an admin is
+# explicit and is not capped. Default 1000.
+max_active_bans: 1000
+# Circuit breaker (stage 8). More than max_bans automatic bans
+# inside window_seconds trips the breaker: further auto-bans are
+# refused (detections still recorded) until cooldown_seconds have
+# passed since the trip, when it re-arms on its own. A trip logs a
+# critical line, publishes a circuit_breaker event on Redis
+# logbanner:events, and persists it as an events row, which the
+# gateway reads for GET /api/circuit-breaker and the alert checker
+# mails about. Manual bans bypass the breaker.
+circuit_breaker:
+  max_bans: 20
+  window_seconds: 600
+  cooldown_seconds: 600
+rules_path: /etc/logbanner/rules/defaults.yaml
+database_url: ""
+redis_addr: "localhost:6379"
+# Directory holding per-source read offsets, so the agent resumes where
+# it stopped instead of re-reading logs after a restart. Defaults to
+# ./var (relative to the agent working directory) when unset; on a real
+# host use /var/lib/logbanner and make it writable by the agent user.
+state_dir: /var/lib/logbanner
+sources:
+  - path: /var/log/nginx/access.log
+    format: nginx
+  - path: /var/log/auth.log
+    format: ssh
+# Built-in formats are nginx, apache, ssh and json. A custom format is
+# a regex with named groups; recognised groups are ip, method, path,
+# status, user_agent, user, message, time and timestamp. time_format is
+# a Go time layout, defaulting to RFC3339. Uncomment to use:
+# formats:
+#   - name: app
+#     regex: '^(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z) (?P<ip>\S+) (?P<method>\S+) (?P<path>\S+) (?P<status>\d{3}) (?P<message>.*)$'
+#     time_format: "2006-01-02T15:04:05Z07:00"

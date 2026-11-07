@@ -1,0 +1,22 @@
+[Unit]
+Description=logbanner detection agent
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=logbanner
+Group=logbanner
+ExecStart=/usr/local/bin/agent -config /etc/logbanner/agent.yaml
+Restart=on-failure
+RestartSec=5
+# Only the capability needed to edit firewall sets. The agent never
+# runs as root and never gets full CAP_SYS_ADMIN.
+CapabilityBoundingSet=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/logbanner /var/lib/logbanner
+
+[Install]
+WantedBy=multi-user.target

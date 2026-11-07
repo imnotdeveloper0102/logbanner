@@ -1,0 +1,64 @@
+# Default detection rules for logbanner.
+# Read by the agent from stage 3 onward. Fields:
+#   name: unique rule name
+#   source: log source the rule applies to (nginx, apache, ssh, app)
+#   pattern: match expression for the parser (path list, user-agent substring, or regex)
+#   threshold: events required inside window_seconds to trigger
+#   window_seconds: sliding window length
+#   ban_seconds: first ban length; escalation grows it on repeat offences
+#   action: ban or log (log only records the event, blocks nothing)
+#   escalation: ban length in seconds for offence 2, 3, ...; null means permanent
+rules:
+  - name: ssh-brute-force
+    source: ssh
+    pattern: "Failed password"
+    threshold: 5
+    window_seconds: 300
+    ban_seconds: 3600
+    action: ban
+    escalation: [3600, 14400, 86400, null]
+
+  - name: http-login-brute-force
+    source: nginx
+    pattern: "POST /login|POST /wp-login.php|POST /xmlrpc.php"
+    threshold: 10
+    window_seconds: 300
+    ban_seconds: 3600
+    action: ban
+    escalation: [3600, 14400, 86400, null]
+
+  - name: path-scanner
+    source: nginx
+    pattern: "/.env|/.git|/phpmyadmin|/wp-admin|/admin"
+    threshold: 5
+    window_seconds: 120
+    ban_seconds: 7200
+    action: ban
+    escalation: [7200, 86400, null]
+
+  - name: http-404-scan
+    source: nginx
+    pattern: "status=404"
+    threshold: 20
+    window_seconds: 60
+    ban_seconds: 3600
+    action: ban
+    escalation: [3600, 14400, 86400, null]
+
+  - name: http-flood
+    source: nginx
+    pattern: "*"
+    threshold: 300
+    window_seconds: 60
+    ban_seconds: 600
+    action: ban
+    escalation: [600, 3600, 86400, null]
+
+  - name: malicious-bot
+    source: nginx
+    pattern: "ua:(?i)(sqlmap|nikto|nmap|masscan|gobuster|dirbuster|hydra|nuclei|wpscan|acunetix|nessus|burpsuite|zgrab|whatweb)"
+    threshold: 1
+    window_seconds: 60
+    ban_seconds: 3600
+    action: ban
+    escalation: [3600, 14400, 86400, null]

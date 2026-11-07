@@ -1,0 +1,111 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: logbanner-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-logbanner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-logbanner}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-logbanner}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: logbanner-redis
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  gateway:
+    build: ../gateway
+    container_name: logbanner-gateway
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-logbanner}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-logbanner}
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build: ../frontend
+    container_name: logbanner-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway
+
+  admin-service:
+    build: ../admin-service
+    container_name: logbanner-admin
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-logbanner}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-logbanner}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:-}
+    ports:
+      - "8081:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  agent:
+    build: ../agent
+    container_name: logbanner-agent
+    # CAP_NET_ADMIN is the only capability the agent needs, and only
+    # when dry-run is off. It has no effect in this VM (no
+    # CAP_NET_ADMIN here) and none on a host that does not grant it;
+    # the agent then fails at startup instead of banning nothing.
+    cap_add:
+      - NET_ADMIN
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-logbanner}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-logbanner}
+      REDIS_ADDR: redis:6379
+      AGENT_DRY_RUN: ${AGENT_DRY_RUN:-true}
+      AGENT_FIREWALL_DRIVER: ${AGENT_FIREWALL_DRIVER:-nftables}
+      AGENT_MAX_ACTIVE_BANS: ${AGENT_MAX_ACTIVE_BANS:-1000}
+      AGENT_CB_MAX_BANS: ${AGENT_CB_MAX_BANS:-20}
+      AGENT_CB_WINDOW_SECONDS: ${AGENT_CB_WINDOW_SECONDS:-600}
+      AGENT_CB_COOLDOWN_SECONDS: ${AGENT_CB_COOLDOWN_SECONDS:-600}
+    volumes:
+      - ../rules:/etc/logbanner/rules:ro
+      - nginx-logs:/var/log/nginx:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    container_name: logbanner-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - gateway
+      - frontend
+
+volumes:
+  pgdata:
+  redisdata:
+  nginx-logs:
